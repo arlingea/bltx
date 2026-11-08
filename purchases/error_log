@@ -1,0 +1,4 @@
+[28-Aug-2026 11:41:02 Asia/Jakarta] PHP Warning:  Undefined array key "gr_payment_date" in /home/bltxmyid/public_html/bltx/purchases/goods_receipt_view.php on line 583
+[28-Aug-2026 11:41:02 Asia/Jakarta] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/bltxmyid/public_html/bltx/purchases/goods_receipt_view.php on line 583
+[29-Aug-2026 10:46:17 Asia/Jakarta] PHP Warning:  Undefined array key "gr_payment_date" in /home/bltxmyid/public_html/bltx/purchases/goods_receipt_view.php on line 583
+[29-Aug-2026 10:46:17 Asia/Jakarta] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/bltxmyid/public_html/bltx/purchases/goods_receipt_view.php on line 583
