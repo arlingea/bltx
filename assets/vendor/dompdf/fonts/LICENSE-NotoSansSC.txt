@@ -1,0 +1,19 @@
+Noto Sans SC (Simplified Chinese) — NotoSansSC-Regular.ttf / NotoSansSC-Bold.ttf
+
+Source: https://github.com/google/fonts (ofl/notosanssc), a Google-maintained
+mirror of the Noto Sans CJK project. The two files here are static Regular
+(wght=400) and Bold (wght=700) instances generated from Google Fonts'
+"NotoSansSC[wght].ttf" variable font using fontTools' variable font
+instancer, so dompdf's font subsetter (which needs plain TrueType outline
+data, not variable-font or CFF/OpenType outline data) can embed them
+correctly. No glyph shapes were modified — only the variable-width axis was
+resolved to two fixed weights.
+
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name
+'Source'. Copyright 2014-2021 Google Inc. Noto is a trademark of Google Inc.
+Licensed under the SIL Open Font License, Version 1.1.
+Full license text: https://openfontlicense.org / https://scripts.sil.org/OFL
+
+Bundled solely to give the PO PDF export (includes/export/po_export_pdf.php)
+correct Chinese (CJK) glyph rendering in dompdf, as required by the Purchase
+Order document feature.
