@@ -1042,12 +1042,17 @@ function deleteUser(userId, username) {
    dan hanya field miliknya sendiri yang ikut diperbarui. Tanpa sinkron
    di bawah, tombol Add / Edit / Delete di halaman ini masih memegang
    token lama sehingga request berikutnya ditolak. Disalin saat modal
-   ditutup, murni di dalam file ini. */
-$(document).on('hidden.bs.modal', '#permModal', function () {
-    var fresh = $('#perm_csrf_token').val();
-    if (fresh) {
-        $('#addModal input[name="csrf_token"], #editModal input[name="csrf_token"], #deleteUserForm input[name="csrf_token"]').val(fresh);
-    }
+   ditutup, murni di dalam file ini.
+   Dipasang setelah DOM siap: jQuery baru dimuat oleh footer.php, sehingga
+   pemanggilan $ langsung di sini melempar "$ is not defined" dan menghentikan
+   sisa skrip (termasuk lazy-load foto di bawah). */
+document.addEventListener('DOMContentLoaded', function () {
+    $(document).on('hidden.bs.modal', '#permModal', function () {
+        var fresh = $('#perm_csrf_token').val();
+        if (fresh) {
+            $('#addModal input[name="csrf_token"], #editModal input[name="csrf_token"], #deleteUserForm input[name="csrf_token"]').val(fresh);
+        }
+    });
 });
 
 // Lazy load photo dengan IntersectionObserver
