@@ -1556,6 +1556,7 @@ return [
     'gr_payment_paid'            => 'Paid',
     'gr_payment_unpaid'          => 'Unpaid',
     'gr_payment_filter_all'      => 'All Payment Status',
+    'gr_payment_cancel'          => 'Cancel',
     'gr_record_payment'          => 'Record Payment',
     'gr_payment_details'         => 'Payment Details',
     'gr_payment_recorded'        => 'Payment has been recorded.',

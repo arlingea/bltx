@@ -37,10 +37,14 @@ $g_search   = isset($_GET['gr_search']) ? trim((string)$_GET['gr_search']) : '';
 $g_status   = isset($_GET['gr_status']) ? trim((string)$_GET['gr_status']) : '';
 if (!in_array($g_status, ['draft', 'received', 'cancelled'], true)) $g_status = '';
 $g_supplier = isset($_GET['gr_supplier']) ? (int)$_GET['gr_supplier'] : 0;
-// Filter Payment Status. Whitelist ketat: apa pun di luar dua nilai ini
+// Filter Payment Status. Whitelist ketat: apa pun di luar tiga nilai ini
 // diabaikan, sehingga nilai dari URL tidak pernah masuk query mentah-mentah.
+//   'paid'   → hanya pembayaran lunas (dokumen hidup)
+//   'unpaid' → hanya hutang yang masih terbuka — dokumen cancelled TIDAK
+//              ikut terbawa (dijaga di gr_buildListWhere())
+//   'cancel' → hanya dokumen yang pembayarannya dibatalkan
 $g_paystat  = isset($_GET['gr_paystat']) ? trim((string)$_GET['gr_paystat']) : '';
-if (!in_array($g_paystat, ['paid', 'unpaid'], true)) $g_paystat = '';
+if (!in_array($g_paystat, ['paid', 'unpaid', 'cancel'], true)) $g_paystat = '';
 $gr_paystat_ready = gr_hasPaymentStatusColumn($conn);
 if (!$gr_paystat_ready) $g_paystat = '';
 $g_from     = isset($_GET['gr_from']) ? trim((string)$_GET['gr_from']) : '';
@@ -168,8 +172,13 @@ bltx_render_flash('gr');
                 <select name="gr_paystat" class="form-select form-select-sm" onchange="this.form.submit()"
                         title="<?= htmlspecialchars($LANG['gr_payment_status']) ?>">
                     <option value=""><?= htmlspecialchars($LANG['gr_payment_filter_all']) ?></option>
-                    <option value="paid"   <?= $g_paystat === 'paid'   ? 'selected' : '' ?>><?= htmlspecialchars($LANG['gr_payment_paid']) ?></option>
-                    <option value="unpaid" <?= $g_paystat === 'unpaid' ? 'selected' : '' ?>><?= htmlspecialchars($LANG['gr_payment_unpaid']) ?></option>
+                    <option value="paid"    <?= $g_paystat === 'paid'    ? 'selected' : '' ?>><?= htmlspecialchars($LANG['gr_payment_paid']) ?></option>
+                    <option value="unpaid"  <?= $g_paystat === 'unpaid'  ? 'selected' : '' ?>><?= htmlspecialchars($LANG['gr_payment_unpaid']) ?></option>
+                    <!-- Cancel = dokumen yang pembayarannya dibatalkan. Nilainya
+                         identik dengan yang ditulis ke kolom payment_status oleh
+                         gr_cancel(), sehingga pilihan ini HANYA menampilkan baris
+                         berstatus cancel — tidak pernah tercampur unpaid/paid. -->
+                    <option value="cancel"  <?= $g_paystat === 'cancel'  ? 'selected' : '' ?>><?= htmlspecialchars($LANG['gr_payment_cancel']) ?></option>
                 </select>
             </form>
             <?php endif; ?>
@@ -246,13 +255,14 @@ bltx_render_flash('gr');
                         </td>
                         <?php if ($gr_paystat_ready): ?>
                         <td>
-                            <?php if ($g['status'] === 'cancelled'): ?>
-                                <span class="text-muted">—</span>
-                            <?php else: $__ps = gr_paymentStatus($g); ?>
+                            <?php /* gr_paymentStatus() sudah menormalkan dokumen
+                                    berstatus cancelled menjadi 'cancel', jadi badge
+                                    "Cancel" ikut tampil — dan nilainya sama persis
+                                    dengan yang dipakai filter server-side di atas. */
+                                  $__ps = gr_paymentStatus($g); ?>
                                 <span class="badge bg-<?= gr_paymentStatusColor($__ps) ?>">
                                     <?= htmlspecialchars(gr_paymentStatusLabel($__ps)) ?>
                                 </span>
-                            <?php endif; ?>
                         </td>
                         <?php endif; ?>
                         <td><?= htmlspecialchars($g['created_by_name']) ?></td>

@@ -545,7 +545,7 @@ CREATE TABLE `goods_receipts` (
   `payer_name` varchar(100) DEFAULT NULL COMMENT 'NAMA user payer (permanen, tidak hilang saat akun dihapus)',
   `payer_shift` int(11) DEFAULT NULL COMMENT 'ID shift (padanan purchases.payer_shift)',
   `purchase_staff_name` varchar(100) DEFAULT NULL COMMENT 'NAMA purchase staff (permanen, tidak hilang saat user dihapus)',
-  `payment_status` enum('paid','unpaid') NOT NULL DEFAULT 'paid' COMMENT 'paid = bayar langsung saat terima, unpaid = pembayaran tertunda',
+  `payment_status` enum('paid','unpaid','cancel') NOT NULL DEFAULT 'paid' COMMENT 'paid = bayar langsung saat terima, unpaid = pembayaran tertunda, cancel = pembayarannya dibatalkan (GR cancelled)',
   `paid_at` timestamp NULL DEFAULT NULL COMMENT 'Waktu pembayaran dicatat (NULL selama masih unpaid)',
   `paid_by` int(11) DEFAULT NULL COMMENT 'ID user yang mencatat pembayaran (referensi, boleh hilang)',
   `paid_by_name` varchar(100) DEFAULT NULL COMMENT 'NAMA pencatat pembayaran (permanen, tidak hilang saat akun dihapus)',

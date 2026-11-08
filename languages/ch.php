@@ -1562,6 +1562,7 @@ return [
     'gr_payment_paid'            => '已付款',
     'gr_payment_unpaid'          => '未付款',
     'gr_payment_filter_all'      => '全部付款状态',
+    'gr_payment_cancel'          => '已取消',
     'gr_record_payment'          => '登记付款',
     'gr_payment_details'         => '付款明细',
     'gr_payment_recorded'        => '付款已登记。',

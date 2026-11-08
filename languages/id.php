@@ -1556,6 +1556,7 @@ return [
     'gr_payment_paid'            => 'Sudah Dibayar',
     'gr_payment_unpaid'          => 'Belum Dibayar',
     'gr_payment_filter_all'      => 'Semua Status Pembayaran',
+    'gr_payment_cancel'          => 'Dibatalkan',
     'gr_record_payment'          => 'Catat Pembayaran',
     'gr_payment_details'         => 'Rincian Pembayaran',
     'gr_payment_recorded'        => 'Pembayaran berhasil dicatat.',

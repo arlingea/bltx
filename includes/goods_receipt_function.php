@@ -172,11 +172,40 @@ function gr_hasPaymentColumns(mysqli $conn): bool {
 
 /**
  * Deteksi apakah kolom Opsi Pembayaran pada goods_receipts sudah ada
- * (SQL sql/goods_receipt_payment_status.sql sudah dijalankan).
+ * (SQL sql/goods_receipt_payment_status.sql sudah dijalankan) DAN sudah
+ * dimigrasikan ke sql/goods_receipt_payment_status_cancel.sql, yaitu
+ * enum-nya ikut memuat nilai 'cancel'.
  * Pola sama persis dengan gr_hasPaymentColumns() supaya halaman tetap
  * berfungsi penuh dengan alur lama walaupun migrasi belum dijalankan.
  */
 function gr_hasPaymentStatusColumn(mysqli $conn): bool {
+    static $cached = null;
+    if ($cached !== null) return $cached;
+    $report = mysqli_report(MYSQLI_REPORT_OFF);
+    $ok = false;
+    try {
+        // SHOW COLUMNS mengembalikan tipe data enum secara persis, mis.
+        // "enum('paid','unpaid','cancel')". Nilai 'cancel' wajib ikut
+        // dideteksi: tanpa itu filter Cancel di halaman daftar tidak
+        // pernah bisa mencocokkan baris mana pun.
+        $res  = @$conn->query("SHOW COLUMNS FROM `goods_receipts` LIKE 'payment_status'");
+        $col  = $res ? $res->fetch_assoc() : null;
+        $type = (string)($col['Type'] ?? '');
+        $ok   = ($type !== '') && strpos($type, 'cancel') !== false;
+    } catch (Throwable $e) {
+        $ok = false;
+    }
+    mysqli_report($report);
+    return $cached = $ok;
+}
+
+/**
+ * Sama seperti gr_hasPaymentStatusColumn(), tetapi TIDAK mensyaratkan nilai
+ * 'cancel' ada di dalam enum — dipakai oleh jalur penulisan (create / record
+ * payment) yang hanya pernah menulis 'paid' / 'unpaid', sehingga perilaku
+ * lamanya tidak berubah bila migrasi cancel belum dijalankan.
+ */
+function gr_hasPaymentStatusBaseColumn(mysqli $conn): bool {
     static $cached = null;
     if ($cached !== null) return $cached;
     $report = mysqli_report(MYSQLI_REPORT_OFF);
@@ -215,21 +244,31 @@ function gr_hasCancelReasonColumn(mysqli $conn): bool {
  * Baris yang dibuat sebelum migrasi (kolomnya belum ada / masih NULL)
  * dianggap 'paid', karena alur lama MEWAJIBKAN pembayaran diisi saat
  * penerimaan. Dengan begitu dokumen lama tidak pernah ikut terkunci.
+ *
+ * Dokumen berstatus 'cancelled' selalu dinormalkan menjadi 'cancel' —
+ * uang tidak pernah keluar untuk GR yang dibatalkan, dan inilah nilai
+ * yang disimpan migrasi sql/goods_receipt_payment_status_cancel.sql
+ * sehingga filter server-side (gr_buildListWhere()) dan tampilan baris
+ * memakai aturan yang sama persis.
  */
 function gr_paymentStatus($gr): string {
     if (!is_array($gr)) return 'paid';
+    if (trim((string)($gr['status'] ?? '')) === 'cancelled') return 'cancel';
     $val = trim((string)($gr['payment_status'] ?? ''));
+    if ($val === 'cancel') return 'cancel';
     return $val === 'unpaid' ? 'unpaid' : 'paid';
 }
 
 /** Kelas warna badge untuk status pembayaran GR. */
 function gr_paymentStatusColor(string $paymentStatus): string {
+    if ($paymentStatus === 'cancel') return 'secondary';
     return $paymentStatus === 'unpaid' ? 'warning' : 'success';
 }
 
 /** Label status pembayaran dari language file aktif (tanpa fallback string). */
 function gr_paymentStatusLabel(string $paymentStatus): string {
     global $LANG;
+    if ($paymentStatus === 'cancel') return $LANG['gr_payment_cancel'];
     return $paymentStatus === 'unpaid'
         ? $LANG['gr_payment_unpaid']
         : $LANG['gr_payment_paid'];
@@ -455,10 +494,26 @@ function gr_buildListWhere(array $f): array {
     // belum dijalankan, supaya query tidak pernah menyebut kolom yang belum
     // ada. Kombinasi status='received' + payment_status='unpaid' menghasilkan
     // daftar hutang usaha: barang sudah diterima, uang belum keluar.
+    //
+    // 'unpaid' dan 'paid' HARUS eksklusif satu sama lain. Sebelumnya kolom
+    // payment_status pada baris berstatus cancelled ikut terbawa ('unpaid'
+    // bila GR dibatalkan sebelum pembayarannya dicatat), sehingga memilih
+    // Unpaid menampilkan campuran unpaid + dokumen cancel. Sejak nilai
+    // 'cancel' ditulis ke kolomnya (lihat gr_cancel() dan sql/
+    // goods_receipt_payment_status_cancel.sql), pembanding langsung di bawah
+    // ini sudah cukup; klausa tambahan di belakang tetap dipertahankan agar
+    // data lama yang belum termigrasi tidak kembali bocor ke filter Unpaid.
     if (!empty($f['payment_status']) && !empty($f['__has_payment_status'])) {
-        $where   .= ' AND gr.payment_status = ?';
-        $params[] = (string)$f['payment_status'];
-        $types   .= 's';
+        $ps = (string)$f['payment_status'];
+        if ($ps === 'cancel') {
+            $where   .= " AND (gr.payment_status = 'cancel' OR gr.status = 'cancelled')";
+        } elseif ($ps === 'unpaid') {
+            $where   .= " AND gr.payment_status = 'unpaid' AND gr.status <> 'cancelled'";
+        } else {
+            $where   .= " AND gr.payment_status = ? AND gr.status <> 'cancelled'";
+            $params[] = $ps;
+            $types   .= 's';
+        }
     }
     if (!empty($f['supplier_id'])) {
         $where   .= ' AND gr.supplier_id = ?';
@@ -1063,7 +1118,7 @@ function gr_create(mysqli $conn, array $post): array {
     //                dicatat kemudian lewat gr_recordPayment().
     // Bila migrasi payment_status belum dijalankan, opsi dipaksa ke 'now'
     // supaya tidak ada baris unpaid yang tersimpan tanpa kolom penampungnya.
-    $hasPayStatus  = gr_hasPaymentStatusColumn($conn);
+    $hasPayStatus  = gr_hasPaymentStatusBaseColumn($conn);
     $paymentOption = $hasPayStatus ? gr_normalizePaymentOption($post) : 'now';
     $paymentStatus = ($paymentOption === 'deferred') ? 'unpaid' : 'paid';
 
@@ -1492,7 +1547,11 @@ function gr_update(mysqli $conn, int $grId, array $post): array {
     // harga pada kondisi itu menggeser nilai hutang ke supplier, jadi wajib
     // disertai keterangan. Memakai field variance_reason YANG SUDAH ADA di
     // form, sehingga tidak ada kolom maupun field baru.
-    $hasPayStatus = gr_hasPaymentStatusColumn($conn);
+    // gr_paymentStatus() SELALU mengembalikan 'cancel' untuk dokumen yang
+    // dibatalkan, sehingga syarat "masih hutang" di bawah ini otomatis tidak
+    // pernah terpenuhi pada dokumen cancel — pembayarannya tidak ikut
+    // terbaca sebagai unpaid.
+    $hasPayStatus = gr_hasPaymentStatusBaseColumn($conn);
     $payStatusNow = gr_paymentStatus($existing);
     if ($hasPayStatus
         && $existing['status'] === 'received'
@@ -1656,7 +1715,7 @@ function gr_recordPayment(mysqli $conn, int $grId, array $post): array {
     if (!gr_csrfVerify((string)($post['csrf_token'] ?? '')))
                                   return ['success' => false, 'message_key' => 'invalid_csrf'];
     if (!gr_tablesExist($conn))   return ['success' => false, 'message_key' => 'gr_tables_missing'];
-    if (!gr_hasPaymentStatusColumn($conn) || !gr_hasPaymentColumns($conn)) {
+    if (!gr_hasPaymentStatusBaseColumn($conn) || !gr_hasPaymentColumns($conn)) {
         return ['success' => false, 'message_key' => 'gr_tables_missing'];
     }
 
@@ -1807,24 +1866,57 @@ function gr_cancel(mysqli $conn, int $grId, string $csrf, string $reason = ''): 
     $userId   = (int)$_SESSION['user_id'];
     $userName = gr_currentUserName($conn);
 
+    // ── STATUS PEMBAYARAN Ikut DIPERBARUI ───────────────────────────────
+    // Dokumen yang dibatalkan tidak pernah punya uang keluar, jadi kolom
+    // payment_status ditulis 'cancel' — bukan dibiarkan membawa nilai lama
+    // ('unpaid'). Inilah yang membuat filter "Unpaid" di halaman daftar
+    // benar-benar hanya berisi hutang usaha yang masih hidup.
+    // Ditulis hanya bila enum-nya sudah mendukung 'cancel' (sql/
+    // goods_receipt_payment_status_cancel.sql); bila belum, pembatalan tetap
+    // jalan seperti sebelumnya dan halaman daftar menutupinya lewat klausa
+    // `OR gr.status = 'cancelled'` di gr_buildListWhere().
+    $setPayCancel = gr_hasPaymentStatusColumn($conn);
+
     if ($hasReasonCol) {
         $reasonParam = ($reason !== '') ? $reason : null;
-        $upd = $conn->prepare(
-            "UPDATE goods_receipts
-                SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?,
-                    cancelled_at = NOW(), cancel_reason = ?
-              WHERE id = ?"
-        );
-        if (!$upd) return ['success' => false, 'message_key' => 'db_error'];
-        $upd->bind_param('issi', $userId, $userName, $reasonParam, $grId);
+        if ($setPayCancel) {
+            $upd = $conn->prepare(
+                "UPDATE goods_receipts
+                    SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?,
+                        cancelled_at = NOW(), cancel_reason = ?, payment_status = 'cancel'
+                  WHERE id = ?"
+            );
+            if (!$upd) return ['success' => false, 'message_key' => 'db_error'];
+            $upd->bind_param('issi', $userId, $userName, $reasonParam, $grId);
+        } else {
+            $upd = $conn->prepare(
+                "UPDATE goods_receipts
+                    SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?,
+                        cancelled_at = NOW(), cancel_reason = ?
+                  WHERE id = ?"
+            );
+            if (!$upd) return ['success' => false, 'message_key' => 'db_error'];
+            $upd->bind_param('issi', $userId, $userName, $reasonParam, $grId);
+        }
     } else {
-        $upd = $conn->prepare(
-            "UPDATE goods_receipts
-                SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?, cancelled_at = NOW()
-              WHERE id = ?"
-        );
+        if ($setPayCancel) {
+            $upd = $conn->prepare(
+                "UPDATE goods_receipts
+                    SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?, cancelled_at = NOW(),
+                        payment_status = 'cancel'
+                  WHERE id = ?"
+            );
+            $typesForBind = 'isi';
+        } else {
+            $upd = $conn->prepare(
+                "UPDATE goods_receipts
+                    SET status = 'cancelled', cancelled_by = ?, cancelled_by_name = ?, cancelled_at = NOW()
+                  WHERE id = ?"
+            );
+            $typesForBind = 'isi';
+        }
         if (!$upd) return ['success' => false, 'message_key' => 'db_error'];
-        $upd->bind_param('isi', $userId, $userName, $grId);
+        $upd->bind_param($typesForBind, $userId, $userName, $grId);
     }
     $okExec = $upd->execute();
     $upd->close();
