@@ -204,7 +204,7 @@ if (defined('PAYROLL_LEGACY_POST')) { payrollRedirectLegacy('cash_advances'); }
             </div>
             <div class="col-sm-8 col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                    <i class="bi bi-search me-1"></i><?= $LANG['filter'] ?>
+                    <i class="bi bi-funnel me-1"></i><?= $LANG['filter'] ?>
                 </button>
                 <a href="<?= payrollGateUrl('cash_advances') ?>" class="btn btn-secondary btn-sm" title="<?= $LANG['reset'] ?>">
                     <i class="bi bi-x-lg"></i>

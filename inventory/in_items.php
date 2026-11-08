@@ -121,11 +121,7 @@ include BASE_PATH . '/includes/header.php';
         .scanner-container,
         .manual-input,
         .cart-section {
-            background: #fff;
-            border-radius: 12px;
-            padding: 1rem;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,.08);
         }
 
         /* ── READER ──────────────────────────────────────────────────── */
@@ -256,7 +252,6 @@ include BASE_PATH . '/includes/header.php';
             -webkit-overflow-scrolling: touch;
         }
     </style>
-</head>
 
 <div class="container-fluid p-0">
 
@@ -273,16 +268,18 @@ include BASE_PATH . '/includes/header.php';
     <!-- ======================================================
          SCANNER SECTION
     ====================================================== -->
-    <div class="scanner-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">
+    <div class="card scanner-container">
+        <div class="card-header">
+            <div class="card-title">
                 <i class="bi bi-qr-code-scan"></i>
                 <?php echo htmlspecialchars($lang['scan_product']); ?>
-            </h6>
+            </div>
+            <div class="card-tools">
             <button class="btn btn-sm btn-primary" onclick="toggleScanner()">
                 <i class="bi bi-camera" id="scannerIcon"></i>
                 <span id="scannerText"><?php echo htmlspecialchars($lang['scanner_active']); ?></span>
             </button>
+            </div>
         </div>
         <div id="reader" style="display:none;"></div>
     </div>
@@ -290,7 +287,8 @@ include BASE_PATH . '/includes/header.php';
     <!-- ======================================================
          MANUAL INPUT
     ====================================================== -->
-    <div class="manual-input">
+    <div class="card manual-input">
+        <div class="card-body">
         <form id="manualForm">
             <div class="input-group">
                 <input type="text" id="manualCode" class="form-control"
@@ -301,23 +299,27 @@ include BASE_PATH . '/includes/header.php';
                 </button>
             </div>
         </form>
+        </div>
     </div>
 
     <!-- ======================================================
          CART SECTION
     ====================================================== -->
-    <div class="cart-section">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">
+    <div class="card cart-section">
+        <div class="card-header">
+            <div class="card-title">
                 <i class="bi bi-cart3"></i>
                 <?php echo htmlspecialchars($lang['cart']); ?>
-                (<span id="cartCount">0</span>)
-            </h6>
+                <span>(<span id="cartCount">0</span>)</span>
+            </div>
+            <div class="card-tools">
             <button class="btn btn-sm btn-danger" onclick="clearCart()">
                 <i class="bi bi-trash"></i>
                 <?php echo htmlspecialchars($lang['clear']); ?>
             </button>
+            </div>
         </div>
+        <div class="card-body">
 
         <div id="cartItems">
             <div class="text-center text-muted py-4">
@@ -349,16 +351,20 @@ include BASE_PATH . '/includes/header.php';
                 <?php echo htmlspecialchars($lang['complete']); ?>
             </button>
         </div>
+        </div>
     </div>
 
     <!-- ======================================================
          HISTORY SECTION
     ====================================================== -->
-    <div class="cart-section">
-        <h6 class="mb-3">
+    <div class="card cart-section">
+        <div class="card-header">
+            <div class="card-title">
             <i class="bi bi-clock-history"></i>
             <?php echo htmlspecialchars($lang['history']); ?>
-        </h6>
+        </div>
+        </div>
+        <div class="card-body">
         <div class="table-responsive">
             <table id="historyTable" class="table table-sm table-striped table-hover" style="width:100%">
                 <thead class="table-light">
@@ -372,6 +378,7 @@ include BASE_PATH . '/includes/header.php';
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
         </div>
     </div>
 

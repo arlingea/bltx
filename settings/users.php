@@ -645,8 +645,8 @@ if (isSuperAdmin()) {
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($row['username']); ?></td>
-                                <td class="d-flex align-items-center">
-                                    <span class="d-inline-block rounded-circle bg-<?php echo $is_online ? 'success' : 'secondary'; ?> me-2" style="width: 10px; height: 10px;" title="<?php echo $last_seen_text; ?>" data-bs-toggle="tooltip"></span>
+                                <td>
+                                    <span class="d-inline-block rounded-circle align-middle bg-<?php echo $is_online ? 'success' : 'secondary'; ?> me-2" style="width: 10px; height: 10px;" title="<?php echo $last_seen_text; ?>" data-bs-toggle="tooltip"></span>
                                     <?php echo htmlspecialchars($row['full_name']); ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($row['email']); ?></td>

@@ -296,20 +296,20 @@ h5 {
                 <input type="hidden" name="tab" value="stock_opname">
                 <div class="row g-3">
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="f_opname_number" class="form-label small"><?= invHtml($LANG['so_opname_number']) ?></label>
                         <input type="text" class="form-control form-control-sm" name="opname_number" id="f_opname_number"
                                value="<?= invHtml($f_opname_number, '') ?>" placeholder="SO-...">
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="f_date_range" class="form-label small"><?= invHtml($LANG['so_date_range']) ?></label>
                         <input type="text" class="form-control form-control-sm" id="f_date_range" autocomplete="off" placeholder="<?= invHtml($LANG['so_date_range']) ?>">
                         <input type="hidden" name="date_from" id="f_date_from" value="<?= invHtml($f_date_from, '') ?>">
                         <input type="hidden" name="date_to" id="f_date_to" value="<?= invHtml($f_date_to, '') ?>">
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="f_location_id" class="form-label small"><?= invHtml($LANG['location']) ?></label>
                         <select class="form-select form-select-sm" name="location_id" id="f_location_id">
                             <option value=""><?= invHtml($LANG['so_all_locations']) ?></option>
@@ -321,7 +321,7 @@ h5 {
                         </select>
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="f_status" class="form-label small"><?= invHtml($LANG['status']) ?></label>
                         <select class="form-select form-select-sm" name="status" id="f_status">
                             <option value=""><?= invHtml($LANG['so_all_status']) ?></option>
@@ -334,7 +334,7 @@ h5 {
                     </div>
 
                     <?php if ($can_view_all): ?>
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="f_created_by" class="form-label small"><?= invHtml($LANG['created_by']) ?></label>
                         <select class="form-select form-select-sm" name="created_by" id="f_created_by">
                             <option value=""><?= invHtml($LANG['all']) ?></option>

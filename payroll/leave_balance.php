@@ -134,8 +134,8 @@ include __DIR__ . '/../includes/header.php';
                 <input type="text" name="search" class="form-control form-control-sm" value="<?= safeOutput($search) ?>" placeholder="<?= $LANG['full_name'] ?>, Code...">
             </div>
             <div class="col-4 col-md-3 d-flex gap-1">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i></button>
-                <a href="<?= url('payroll/leave_balance.php') ?>" class="btn btn-secondary btn-sm"><i class="bi bi-x"></i></a>
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> <?= htmlspecialchars($LANG['filter']) ?></button>
+                <a href="<?= url('payroll/leave_balance.php') ?>" class="btn btn-secondary btn-sm" title="<?= htmlspecialchars($LANG['reset']) ?>"><i class="bi bi-x-circle"></i></a>
             </div>
         </form>
     </div>

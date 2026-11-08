@@ -190,7 +190,7 @@ $result = $conn->query("SELECT * FROM news ORDER BY created_at DESC");
                     'striped' => false,
                     'order'   => [0, 'asc'],
                     'columns' => [
-                        ['label' => $LANG['no']],
+                        ['label' => $LANG['col_no']],
                         ['label' => $LANG['title']],
                         ['label' => $LANG['content']],
                         ['label' => $LANG['status'],     'align' => 'center'],

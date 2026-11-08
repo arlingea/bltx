@@ -134,7 +134,7 @@ if (defined('PAYROLL_LEGACY_POST')) { payrollRedirectLegacy('payroll_periods'); 
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th><?= $LANG['no'] ?></th>
+                        <th><?= $LANG['col_no'] ?></th>
                         <th><?= $LANG['period'] ?></th>
                         <th><?= $LANG['start_date'] ?></th>
                         <th><?= $LANG['end_date'] ?></th>

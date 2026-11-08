@@ -127,7 +127,7 @@ if (!defined('SETTINGS_GATE')) {
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid p-0">
 
     <!-- Navigasi Tab -->
     <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">

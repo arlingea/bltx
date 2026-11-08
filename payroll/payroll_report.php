@@ -253,8 +253,8 @@ include __DIR__ . '/../includes/header.php';
                 </select>
             </div>
             <div class="col-12 col-md-2 d-flex gap-1">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i></button>
-                <a href="<?= url('payroll/payroll_report.php') ?>" class="btn btn-secondary btn-sm"><i class="bi bi-x"></i></a>
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> <?= htmlspecialchars($LANG['filter']) ?></button>
+                <a href="<?= url('payroll/payroll_report.php') ?>" class="btn btn-secondary btn-sm" title="<?= htmlspecialchars($LANG['reset']) ?>"><i class="bi bi-x-circle"></i></a>
             </div>
         </form>
     </div>

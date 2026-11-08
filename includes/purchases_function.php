@@ -572,7 +572,7 @@ function pf_csrfRegenerate() {
  * @param  string $existing_filename  Current filename from DB (for edit mode)
  * @return string
  */
-function pf_handleDocumentUpload($existing_filename = '') {
+function pf_handleDocumentUpload($existing_filename = '', $keep_old_file = false) {
     if (isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
         $file_tmp  = $_FILES['document']['tmp_name'];
         $file_name = $_FILES['document']['name'];
@@ -586,7 +586,7 @@ function pf_handleDocumentUpload($existing_filename = '') {
             $dest     = UPLOAD_PATH . 'purchase/' . $new_name;
             if (move_uploaded_file($file_tmp, $dest)) {
                 // Remove old file if replacing
-                if (!empty($existing_filename)) {
+                if (!$keep_old_file && !empty($existing_filename)) {
                     $old = UPLOAD_PATH . 'purchase/' . basename($existing_filename);
                     if (file_exists($old)) @unlink($old);
                 }
@@ -602,26 +602,51 @@ function pf_handleDocumentUpload($existing_filename = '') {
 // ============================================================
 
 /**
- * Insert purchase items for a given purchase_id.
- * Deletes existing items first (for edit mode) if $delete_existing is true.
- *
- * @param  mysqli $conn
- * @param  int    $purchase_id
- * @param  array  $items_post    Raw $_POST['items'] array
- * @param  bool   $delete_existing
- * @return bool
+ * Normalise posted item rows. Rows without a name or with qty <= 0 are skipped
+ * (same rule as before). Returns ['rows' => [...], 'error' => message_key|''].
  */
-function pf_saveItems($conn, $purchase_id, $items_post, $delete_existing = false) {
+function pf_prepareItems($items_post) {
+    $rows = [];
+    if (!is_array($items_post)) return ['rows' => [], 'error' => 'purchase_at_least_one_item'];
+    foreach ($items_post as $item) {
+        $item_name = trim($item['item_name'] ?? '');
+        $quantity  = (float)($item['quantity'] ?? 0);
+        if ($item_name === '' || $quantity <= 0) continue;
+        $unit_id     = (int)($item['unit_id'] ?? 0);
+        $category_id = (int)($item['category_id'] ?? 0);
+        if ($unit_id <= 0 || $category_id <= 0) {
+            return ['rows' => [], 'error' => 'purchase_incomplete_form'];
+        }
+        $unit_price     = pf_parsePostedAmount($item['unit_price'] ?? '0');
+        $discount       = pf_parsePostedAmount($item['discount'] ?? '0');
+        $price_rounding = pf_parsePostedAmount($item['price_rounding'] ?? '0');
+        $rows[] = [
+            'item_name'      => $item_name,
+            'quantity'       => $quantity,
+            'unit_id'        => $unit_id,
+            'unit_price'     => $unit_price,
+            'discount'       => $discount,
+            'price_rounding' => $price_rounding,
+            'category_id'    => $category_id,
+            'total'          => ($quantity * $unit_price) - $discount + $price_rounding,
+        ];
+    }
+    if (!$rows) return ['rows' => [], 'error' => 'purchase_at_least_one_item'];
+    return ['rows' => $rows, 'error' => ''];
+}
+
+/**
+ * Insert prepared item rows for a purchase. Must run inside the caller's
+ * transaction; throws on any database failure so the caller can roll back.
+ */
+function pf_saveItems($conn, $purchase_id, array $rows, $delete_existing = false) {
     if ($delete_existing) {
         $del = $conn->prepare("DELETE FROM purchase_items WHERE purchase_id = ?");
-        if ($del) {
-            $del->bind_param('i', $purchase_id);
-            $del->execute();
-            $del->close();
-        }
+        if (!$del) throw new RuntimeException('prepare delete items failed');
+        $del->bind_param('i', $purchase_id);
+        if (!$del->execute()) throw new RuntimeException('delete items failed');
+        $del->close();
     }
-
-    if (empty($items_post) || !is_array($items_post)) return true;
 
     $stmt_item = $conn->prepare("
         INSERT INTO purchase_items (
@@ -630,38 +655,31 @@ function pf_saveItems($conn, $purchase_id, $items_post, $delete_existing = false
             category_id, total_price
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
-    if (!$stmt_item) return false;
+    if (!$stmt_item) throw new RuntimeException('prepare insert items failed');
 
-    foreach ($items_post as $item) {
-        // Decode numeric fields — support formatted strings like "1.234.567" or "1,234.56"
-        $item_name      = trim($item['item_name'] ?? '');
-        $quantity       = (float)$item['quantity'];
-        $unit_id        = (int)$item['unit_id'];
-        $unit_price     = pf_parsePostedAmount($item['unit_price'] ?? '0');
-        $discount       = pf_parsePostedAmount($item['discount'] ?? '0');
-        $price_rounding = pf_parsePostedAmount($item['price_rounding'] ?? '0');
-        $category_id    = (int)$item['category_id'];
-
-        if ($item_name === '' || $quantity <= 0) continue;
-
-        $total = ($quantity * $unit_price) - $discount + $price_rounding;
-
+    foreach ($rows as $r) {
         $stmt_item->bind_param(
             "isdidddid",
             $purchase_id,
-            $item_name,
-            $quantity,
-            $unit_id,
-            $unit_price,
-            $discount,
-            $price_rounding,
-            $category_id,
-            $total
+            $r['item_name'],
+            $r['quantity'],
+            $r['unit_id'],
+            $r['unit_price'],
+            $r['discount'],
+            $r['price_rounding'],
+            $r['category_id'],
+            $r['total']
         );
-        $stmt_item->execute();
+        if (!$stmt_item->execute()) throw new RuntimeException('insert item failed');
     }
     $stmt_item->close();
-    return true;
+}
+
+/** Remove an uploaded purchase document file (used for rollback/cleanup). */
+function pf_removeDocumentFile($filename) {
+    if ($filename === '' || $filename === null) return;
+    $path = UPLOAD_PATH . 'purchase/' . basename($filename);
+    if (file_exists($path)) @unlink($path);
 }
 
 /**
@@ -814,10 +832,11 @@ function pf_addPurchase($conn, $post, $files, $user_id) {
 
     // Validate mandatory fields
     if (!$input_date || !$invoice_date || !$purchase_staff_id || !$supplier_id || !$payment_method) {
-        return ['success' => false, 'message_key' => 'incomplete_form', 'insert_id' => 0];
+        return ['success' => false, 'message_key' => 'purchase_incomplete_form', 'insert_id' => 0];
     }
-    if (empty($post['items']) || !is_array($post['items'])) {
-        return ['success' => false, 'message_key' => 'at_least_one_item', 'insert_id' => 0];
+    $prepared = pf_prepareItems($post['items'] ?? null);
+    if ($prepared['error'] !== '') {
+        return ['success' => false, 'message_key' => $prepared['error'], 'insert_id' => 0];
     }
 
     // Terjemahkan ID user menjadi NAMA agar tersimpan permanen di baris ini.
@@ -829,43 +848,48 @@ function pf_addPurchase($conn, $post, $files, $user_id) {
 
     $document = pf_handleDocumentUpload('');
 
-    $stmt = $conn->prepare("
-        INSERT INTO purchases
-            (input_date, invoice_date, purchase_staff_id, payment_by, payer_name, payer_shift,
-             supplier_id, payment_method, notes, overall_discount, overall_price_rounding, tax, document, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    if (!$stmt) {
-        return ['success' => false, 'message_key' => 'db_error', 'insert_id' => 0];
-    }
-    // Type string: s,s,s,s,s,i,i,i,s,d,d,d,s,s = 14 params matching 14 placeholders
-    // Empat kolom identitas user kini bertipe teks dan diisi NAMA, bukan ID.
-    $stmt->bind_param(
-        "sssssiiisdddss",
-        $input_date,
-        $invoice_date,
-        $purchase_staff_name,
-        $payment_by_name,
-        $payer_name_value,
-        $payer_shift,
-        $supplier_id,
-        $payment_method,
-        $notes,
-        $overall_discount,
-        $overall_price_rounding,
-        $tax,
-        $document,
-        $created_by_name
-    );
+    // Header + seluruh item disimpan dalam SATU transaksi: gagal satu, batal semua.
+    $conn->begin_transaction();
+    try {
+        $stmt = $conn->prepare("
+            INSERT INTO purchases
+                (input_date, invoice_date, purchase_staff_id, payment_by, payer_name, payer_shift,
+                 supplier_id, payment_method, notes, overall_discount, overall_price_rounding, tax, document, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmt) throw new RuntimeException('prepare insert purchase failed');
+        // Type string: s,s,s,s,s,i,i,i,s,d,d,d,s,s = 14 params matching 14 placeholders
+        // Empat kolom identitas user kini bertipe teks dan diisi NAMA, bukan ID.
+        $stmt->bind_param(
+            "sssssiiisdddss",
+            $input_date,
+            $invoice_date,
+            $purchase_staff_name,
+            $payment_by_name,
+            $payer_name_value,
+            $payer_shift,
+            $supplier_id,
+            $payment_method,
+            $notes,
+            $overall_discount,
+            $overall_price_rounding,
+            $tax,
+            $document,
+            $created_by_name
+        );
 
-    if (!$stmt->execute()) {
+        if (!$stmt->execute()) throw new RuntimeException('insert purchase failed');
+        $insert_id = (int)$conn->insert_id;
         $stmt->close();
+
+        pf_saveItems($conn, $insert_id, $prepared['rows'], false);
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        pf_removeDocumentFile($document);
+        error_log('[purchase add] ' . $e->getMessage());
         return ['success' => false, 'message_key' => 'db_error', 'insert_id' => 0];
     }
-    $insert_id = (int)$conn->insert_id;
-    $stmt->close();
-
-    pf_saveItems($conn, $insert_id, $post['items'], false);
     pf_csrfRegenerate();
     logActivity('add_purchase', "Added new purchase ID: {$insert_id}");
 
@@ -910,10 +934,11 @@ function pf_editPurchase($conn, $id, $post, $files, $existing_document = '') {
     $tax                    = pf_parsePostedAmount($post['tax']                    ?? '0');
 
     if (!$input_date || !$invoice_date || !$purchase_staff_id || !$supplier_id || !$payment_method) {
-        return ['success' => false, 'message_key' => 'incomplete_form'];
+        return ['success' => false, 'message_key' => 'purchase_incomplete_form'];
     }
-    if (empty($post['items']) || !is_array($post['items'])) {
-        return ['success' => false, 'message_key' => 'at_least_one_item'];
+    $prepared = pf_prepareItems($post['items'] ?? null);
+    if ($prepared['error'] !== '') {
+        return ['success' => false, 'message_key' => $prepared['error']];
     }
 
     // Terjemahkan ID user menjadi NAMA agar tersimpan permanen di baris ini.
@@ -946,46 +971,53 @@ function pf_editPurchase($conn, $id, $post, $files, $existing_document = '') {
         }
     }
 
-    $document = pf_handleDocumentUpload($existing_document);
+    // File lama baru dihapus SETELAH database berhasil disimpan.
+    $document = pf_handleDocumentUpload($existing_document, true);
 
-    $stmt = $conn->prepare("
-        UPDATE purchases SET
-            input_date=?, invoice_date=?, purchase_staff_id=?,
-            payment_by=?, payer_name=?, payer_shift=?,
-            supplier_id=?, payment_method=?, notes=?,
-            overall_discount=?, overall_price_rounding=?, tax=?, document=?
-        WHERE id=?
-    ");
-    if (!$stmt) {
-        return ['success' => false, 'message_key' => 'db_error'];
-    }
-    // Type string: s,s,s,s,s,i,i,i,s,d,d,d,s,i = 14 params matching 14 placeholders
-    // Tiga kolom identitas user kini bertipe teks dan diisi NAMA, bukan ID.
-    $stmt->bind_param(
-        "sssssiiisdddsi",
-        $input_date,
-        $invoice_date,
-        $purchase_staff_name,
-        $payment_by_name,
-        $payer_name_value,
-        $payer_shift,
-        $supplier_id,
-        $payment_method,
-        $notes,
-        $overall_discount,
-        $overall_price_rounding,
-        $tax,
-        $document,
-        $id
-    );
+    // Header + seluruh item disimpan dalam SATU transaksi: gagal satu, batal semua.
+    $conn->begin_transaction();
+    try {
+        $stmt = $conn->prepare("
+            UPDATE purchases SET
+                input_date=?, invoice_date=?, purchase_staff_id=?,
+                payment_by=?, payer_name=?, payer_shift=?,
+                supplier_id=?, payment_method=?, notes=?,
+                overall_discount=?, overall_price_rounding=?, tax=?, document=?
+            WHERE id=?
+        ");
+        if (!$stmt) throw new RuntimeException('prepare update purchase failed');
+        // Type string: s,s,s,s,s,i,i,i,s,d,d,d,s,i = 14 params matching 14 placeholders
+        // Tiga kolom identitas user kini bertipe teks dan diisi NAMA, bukan ID.
+        $stmt->bind_param(
+            "sssssiiisdddsi",
+            $input_date,
+            $invoice_date,
+            $purchase_staff_name,
+            $payment_by_name,
+            $payer_name_value,
+            $payer_shift,
+            $supplier_id,
+            $payment_method,
+            $notes,
+            $overall_discount,
+            $overall_price_rounding,
+            $tax,
+            $document,
+            $id
+        );
 
-    if (!$stmt->execute()) {
+        if (!$stmt->execute()) throw new RuntimeException('update purchase failed');
         $stmt->close();
+
+        pf_saveItems($conn, $id, $prepared['rows'], true);
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        if ($document !== $existing_document) pf_removeDocumentFile($document);
+        error_log('[purchase edit] ' . $e->getMessage());
         return ['success' => false, 'message_key' => 'db_error'];
     }
-    $stmt->close();
-
-    pf_saveItems($conn, $id, $post['items'], true);
+    if ($document !== $existing_document) pf_removeDocumentFile($existing_document);
     pf_csrfRegenerate();
     logActivity('edit_purchase', "Edited purchase ID: {$id}");
 

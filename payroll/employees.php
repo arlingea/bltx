@@ -153,8 +153,8 @@ if (defined('PAYROLL_LEGACY_POST')) { payrollRedirectLegacy('employees'); }
                 </select>
             </div>
             <div class="col-6 col-sm-2 d-flex gap-1">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i></button>
-                <a href="<?= payrollGateUrl('employees') ?>" class="btn btn-secondary btn-sm"><i class="bi bi-x"></i></a>
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> <?= htmlspecialchars($LANG['filter']) ?></button>
+                <a href="<?= payrollGateUrl('employees') ?>" class="btn btn-secondary btn-sm" title="<?= htmlspecialchars($LANG['reset']) ?>"><i class="bi bi-x-circle"></i></a>
             </div>
         </form>
     </div>
@@ -166,7 +166,7 @@ if (defined('PAYROLL_LEGACY_POST')) { payrollRedirectLegacy('employees'); }
             <table class="table table-hover align-middle mb-0" id="empTable">
                 <thead class="table-light">
                     <tr>
-                        <th style="width:45px"><?= $LANG['no'] ?></th>
+                        <th style="width:45px"><?= $LANG['col_no'] ?></th>
                         <th style="width:50px"><?= $LANG['photo'] ?></th>
                         <th><?= $LANG['employee_code'] ?></th>
                         <th><?= $LANG['full_name'] ?></th>

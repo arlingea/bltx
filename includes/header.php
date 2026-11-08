@@ -1085,7 +1085,7 @@ html[data-bs-theme="dark"] body,
 /* DataTables wrapper text */
 [data-bs-theme="dark"] .dataTables_wrapper .dataTables_length, [data-bs-theme="dark"] .dataTables_wrapper .dataTables_filter, [data-bs-theme="dark"] .dataTables_wrapper .dataTables_info, [data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate { color: #cbd5e1; }
 [data-bs-theme="dark"] .dataTables_wrapper .dataTables_length select, [data-bs-theme="dark"] .dataTables_wrapper .dataTables_filter input {
-        background: #0f172a; color: #e6edf3; border-color: #2b3a4a;
+        background-color: #0f172a; color: #e6edf3; border-color: #2b3a4a;
     }
 [data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button {
         color: #cbd5e1 !important;

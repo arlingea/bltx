@@ -89,6 +89,8 @@ if (!defined('APP_VERSION')) {
     padding: .35rem .65rem;
     font-size: .9rem;
 }
+/* Ruang untuk panah dropdown "Tampilkan _ entri" */
+.dataTables_length select { padding-right: 2rem; min-width: 4.75rem; }
 .dataTables_length select:focus, .dataTables_filter input:focus {
     outline: 0;
     border-color: var(--arw-primary, #0d6efd);
@@ -116,6 +118,22 @@ if (!defined('APP_VERSION')) {
     .dataTables_paginate .page-link { min-height: 42px; }
 }
 
+/* Tab modul (Purchase, Inventory, HR & Payroll, Settings): di layar kecil
+   tetap satu baris dan bisa digeser, tidak menumpuk menjadi beberapa baris. */
+@media (max-width: 991.98px) {
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .nav-tabs .nav-link { white-space: nowrap; }
+}
+
+/* Kolom aksi berisi tombol tidak dipatahkan ke beberapa baris di layar kecil */
+.table td:has(> .btn), .table td:has(> .btn-group) { white-space: nowrap; }
+
 /* Empty-state / loading helpers (drop-in for pages that need them) */
 .empty-state {
     text-align: center; padding: 3rem 1rem; color: #6c757d;
@@ -132,9 +150,11 @@ if (!defined('APP_VERSION')) {
 </style>
 
 <script>
-$(document).ready(function () {
-
-    /* ─── DataTables defaults ─── */
+/* ─── DataTables defaults ───
+   Dipasang LANGSUNG (bukan di dalam document.ready) supaya ikut berlaku
+   untuk tabel yang di-init lebih awal oleh skrip halaman; sebelumnya tabel
+   seperti itu tampil dengan teks bawaan DataTables berbahasa Inggris. */
+(function () {
     if ($.fn.dataTable) {
         $.extend(true, $.fn.dataTable.defaults, {
             language: {
@@ -147,6 +167,8 @@ $(document).ready(function () {
                     next:     "<?php echo $LANG['next']; ?>",
                     previous: "<?php echo $LANG['previous']; ?>"
                 },
+                infoEmpty: "<?php echo $LANG['showing']; ?> 0 <?php echo $LANG['to']; ?> 0 <?php echo $LANG['of']; ?> 0 <?php echo $LANG['entries']; ?>",
+                infoFiltered: "(<?php echo $LANG['filtered_from']; ?> _MAX_ <?php echo $LANG['entries']; ?>)",
                 emptyTable:  "<?php echo $LANG['no_data']; ?>",
                 zeroRecords: "<?php echo $LANG['no_matching']; ?>"
             },
@@ -155,6 +177,9 @@ $(document).ready(function () {
             autoWidth: false
         });
     }
+})();
+
+$(document).ready(function () {
 
     /* ─── Lazy image loading ─── */
     $('img').each(function () {
@@ -312,6 +337,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     first:"<?php echo $LANG['first']; ?>", last:"<?php echo $LANG['last']; ?>",
                     next:"<?php echo $LANG['next']; ?>", previous:"<?php echo $LANG['previous']; ?>"
                 },
+                infoEmpty:"<?php echo $LANG['showing']; ?> 0 <?php echo $LANG['to']; ?> 0 <?php echo $LANG['of']; ?> 0 <?php echo $LANG['entries']; ?>",
+                infoFiltered:"(<?php echo $LANG['filtered_from']; ?> _MAX_ <?php echo $LANG['entries']; ?>)",
                 emptyTable:"<?php echo $LANG['no_data']; ?>", zeroRecords:"<?php echo $LANG['no_matching']; ?>"
             },
             dom:

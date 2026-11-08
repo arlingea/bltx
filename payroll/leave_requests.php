@@ -237,10 +237,10 @@ bltx_render_flash('hris');
             </div>
             <div class="col-12 col-md-3 d-flex gap-1">
                 <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                    <i class="bi bi-search me-1"></i><?= safeOutput($LANG['filter']) ?>
+                    <i class="bi bi-funnel me-1"></i><?= safeOutput($LANG['filter']) ?>
                 </button>
                 <a href="<?= payrollGateUrl('leave_requests') ?>" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-x"></i>
+                    <i class="bi bi-x-circle"></i>
                 </a>
             </div>
         </form>

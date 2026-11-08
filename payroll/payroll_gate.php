@@ -96,163 +96,13 @@ include __DIR__ . '/../includes/header.php';
    ══════════════════════════════════════════════════════════════════════════ */
 $extra_js = '
 <style>
-/* ── Nav tab ─────────────────────────────────────────────────────────── */
-.payroll-tabs {
-    border-bottom: 1px solid #e5e9f0;
-    margin-bottom: 1rem;
-    gap: .125rem;
-    flex-wrap: wrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-}
-.payroll-tabs::-webkit-scrollbar { height: 4px; }
-.payroll-tabs::-webkit-scrollbar-thumb { background: #d7dee8; border-radius: 4px; }
-.payroll-tabs .nav-link {
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: .5rem .5rem 0 0;
-    color: #5a6b80;
-    font-size: .875rem;
-    font-weight: 500;
-    padding: .5rem .85rem;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    background: transparent;
-    transition: background-color .15s ease, color .15s ease;
-}
-.payroll-tabs .nav-link i { font-size: .95rem; }
-.payroll-tabs .nav-link:hover { background: #f4f7fb; color: #1e2a38; }
-.payroll-tabs .nav-link.active {
-    background: #ffffff;
-    color: #1e2a38;
-    font-weight: 600;
-    border-color: #e5e9f0;
-    box-shadow: 0 -1px 0 #2563eb inset, 0 -2px 0 #2563eb inset;
-}
-
-/* ── Kartu & tabel ───────────────────────────────────────────────────── */
-.payroll-shell .card {
-    border: 1px solid #e9edf3;
-    border-radius: .625rem;
-    background: #ffffff;
-    box-shadow: 0 1px 2px rgba(16,24,40,.04);
-}
-.payroll-shell .card-header {
-    background: #ffffff;
-    border-bottom: 1px solid #eef1f6;
-    font-weight: 600;
-    color: #1e2a38;
-}
+/* Tampilan kartu, tabel, tombol, form, modal, badge, dan DataTables
+   mengikuti gaya global AdminLTE (includes/header.php + footer.php),
+   sama seperti modul Purchase, Inventory, dan Settings. Yang tersisa
+   di sini hanya aturan khusus payroll. */
 .payroll-shell .table { margin-bottom: 0; }
-.payroll-shell .table > thead > tr > th {
-    background: #f8fafc;
-    color: #475569;
-    font-size: .78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .02em;
-    border-bottom: 1px solid #e9edf3;
-    white-space: nowrap;
-}
-.payroll-shell .table > tbody > tr > td {
-    font-size: .875rem;
-    color: #1e2a38;
-    vertical-align: middle;
-    border-color: #f1f4f9;
-}
-.payroll-shell .table > tbody > tr:hover > td { background: #f9fbfd; }
-
-/* ── Tombol: satu ukuran, satu model, di seluruh tab ─────────────────── */
-.payroll-shell .btn {
-    border-radius: .5rem;
-    font-size: .8125rem;
-    font-weight: 500;
-    padding: .375rem .75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    line-height: 1.4;
-}
-.payroll-shell .btn-sm { font-size: .78125rem; padding: .3rem .6rem; }
-.payroll-shell .btn i  { font-size: .9rem; line-height: 1; }
-.payroll-shell .btn-group-sm > .btn { padding: .25rem .5rem; }
-
-/* ── Modal serba putih bersih ────────────────────────────────────────── */
-.payroll-shell .modal-content,
-.modal-content.payroll-modal {
-    border: none;
-    border-radius: .75rem;
-    box-shadow: 0 12px 32px rgba(16,24,40,.12);
-}
-.payroll-shell .modal-header,
-.modal-content.payroll-modal .modal-header {
-    background: #ffffff;
-    border-bottom: 1px solid #eef1f6;
-    padding: 1rem 1.25rem;
-}
-.payroll-shell .modal-title,
-.modal-content.payroll-modal .modal-title {
-    font-size: 1rem; font-weight: 600; color: #1e2a38;
-}
-.payroll-shell .modal-footer,
-.modal-content.payroll-modal .modal-footer {
-    background: #ffffff;
-    border-top: 1px solid #eef1f6;
-    padding: .75rem 1.25rem;
-}
-
-/* ── Form ────────────────────────────────────────────────────────────── */
-.payroll-shell .form-label { font-size: .8125rem; font-weight: 600; color: #475569; margin-bottom: .25rem; }
-.payroll-shell .form-control,
-.payroll-shell .form-select { border-radius: .5rem; border-color: #dfe5ee; font-size: .875rem; }
-.payroll-shell .form-control:focus,
-.payroll-shell .form-select:focus { border-color: #93b4f5; box-shadow: 0 0 0 .18rem rgba(37,99,235,.10); }
-
-/* ── Badge & alert ───────────────────────────────────────────────────── */
-.payroll-shell .badge { font-weight: 600; font-size: .72rem; border-radius: .375rem; padding: .3em .55em; }
-.payroll-shell .alert { border-radius: .5rem; border: 1px solid #e9edf3; font-size: .875rem; }
-
-/* ── Kartu ringkas (dipakai tab Dashboard) ───────────────────────────── */
-.payroll-shell .stat-card { border: 1px solid #e9edf3; border-radius: .625rem; background: #ffffff; }
-.payroll-shell .stat-card .stat-value { font-size: 1.35rem; font-weight: 700; color: #1e2a38; }
-.payroll-shell .stat-card .stat-label { font-size: .78rem; color: #64748b; }
-
-/* ── DataTables ──────────────────────────────────────────────────────── */
-.payroll-shell .dataTables_wrapper .dataTables_filter input,
-.payroll-shell .dataTables_wrapper .dataTables_length select {
-    border-radius: .5rem; border: 1px solid #dfe5ee; font-size: .8125rem;
-}
-.payroll-shell .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-    background: #2563eb !important; border-color: #2563eb !important; color: #fff !important;
-    border-radius: .375rem;
-}
-
-/* ── Responsif ───────────────────────────────────────────────────────── */
-@media (max-width: 767.98px) {
-    .payroll-tabs { flex-wrap: nowrap; }
-    .payroll-tabs .nav-link { padding: .45rem .6rem; font-size: .8125rem; }
-    .payroll-shell .table-responsive { -webkit-overflow-scrolling: touch; }
-    .payroll-shell .btn { padding: .35rem .6rem; }
-}
-
-/* ── Mode gelap: tetap konsisten, tidak memaksa putih ────────────────── */
-[data-bs-theme="dark"] .payroll-tabs { border-bottom-color: #2b3a4a; }
-[data-bs-theme="dark"] .payroll-tabs .nav-link { color: #94a3b8; }
-[data-bs-theme="dark"] .payroll-tabs .nav-link:hover { background: #16202c; color: #e6edf3; }
-[data-bs-theme="dark"] .payroll-tabs .nav-link.active { background: #0f172a; color: #e6edf3; border-color: #2b3a4a; }
-[data-bs-theme="dark"] .payroll-shell .card,
-[data-bs-theme="dark"] .payroll-shell .card-header,
-[data-bs-theme="dark"] .payroll-shell .modal-content,
-[data-bs-theme="dark"] .payroll-shell .modal-header,
-[data-bs-theme="dark"] .payroll-shell .modal-footer { background: #0f172a; border-color: #2b3a4a; color: #e6edf3; }
-[data-bs-theme="dark"] .payroll-shell .table > thead > tr > th { background: #16202c; color: #94a3b8; border-color: #2b3a4a; }
-[data-bs-theme="dark"] .payroll-shell .table > tbody > tr > td { color: #e6edf3; border-color: #1f2b38; }
-[data-bs-theme="dark"] .payroll-shell .table > tbody > tr:hover > td { background: #16202c; }
-[data-bs-theme="dark"] .payroll-shell .stat-card { background: #0f172a; border-color: #2b3a4a; }
-[data-bs-theme="dark"] .payroll-shell .stat-card .stat-value { color: #e6edf3; }
+.payroll-shell .stat-card .stat-value { font-size: 1.35rem; font-weight: 700; }
+.payroll-shell .stat-card .stat-label { font-size: .78rem; color: var(--bs-secondary-color); }
 </style>
 ';
 ?>
@@ -262,7 +112,7 @@ $extra_js = '
 
 
 <!-- ══ NAV TAB — urutan persis submenu sidebar ═══════════════════════════ -->
-<ul class="nav nav-tabs payroll-tabs" role="tablist">
+<ul class="nav nav-tabs mb-4 payroll-tabs" role="tablist">
     <?php foreach ($PAYROLL_TAB_MODULES as $__tab => $__mod): ?>
         <?php if (!payrollModuleAllowed($__mod)) continue; ?>
         <li class="nav-item" role="presentation">

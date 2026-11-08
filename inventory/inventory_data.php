@@ -941,7 +941,7 @@ $grand_value  = ltrim(str_replace($currency_symbol, '', $grand_total_formatted))
                 <input type="hidden" name="tab" value="inventory_data">
                 <div class="row g-3">
                     
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="filter_item" class="form-label small"><?= $LANG['item_name'] ?? 'Item Name' ?></label>
                         <select name="filter_item" id="filter_item" class="form-select form-select-sm">
                             <option value=""><?= $LANG['select'] ?? 'Select' ?></option>
@@ -953,7 +953,7 @@ $grand_value  = ltrim(str_replace($currency_symbol, '', $grand_total_formatted))
                         </select>
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="filter_category" class="form-label small"><?= $LANG['category'] ?? 'Category' ?></label>
                         <select name="filter_category" id="filter_category" class="form-select form-select-sm">
                             <option value=""><?= $LANG['select'] ?? 'Select' ?></option>
@@ -965,7 +965,7 @@ $grand_value  = ltrim(str_replace($currency_symbol, '', $grand_total_formatted))
                         </select>
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="filter_supplier" class="form-label small"><?= $LANG['supplier'] ?? 'Supplier' ?></label>
                         <select name="filter_supplier" id="filter_supplier" class="form-select form-select-sm">
                             <option value=""><?= $LANG['select'] ?? 'Select' ?></option>
@@ -977,7 +977,7 @@ $grand_value  = ltrim(str_replace($currency_symbol, '', $grand_total_formatted))
                         </select>
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="filter_location" class="form-label small"><?= $LANG['warehouse_location'] ?? 'Location' ?></label>
                         <select name="filter_location" id="filter_location" class="form-select form-select-sm">
                             <option value=""><?= $LANG['select'] ?? 'Select' ?></option>
@@ -989,7 +989,7 @@ $grand_value  = ltrim(str_replace($currency_symbol, '', $grand_total_formatted))
                         </select>
                     </div>
 
-                    <div class="col">
+                    <div class="col-12 col-sm-6 col-lg">
                         <label for="filter_min_stock" class="form-label small"><?= $LANG['min_stock'] ?? 'Min Stock' ?></label>
                         <input type="number" 
                                name="filter_min_stock" 
